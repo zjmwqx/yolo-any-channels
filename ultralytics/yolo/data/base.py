@@ -204,7 +204,7 @@ class BaseDataset(Dataset):
         b, gb = 0, 1 << 30  # bytes of cached images, bytes per gigabytes
         n = min(self.ni, 30)  # extrapolate from 30 random images
         for _ in range(n):
-            im = self.get_any_channel_im(random.choice(self.im_files))  # sample image
+            im = self.get_any_channel_img(random.choice(self.im_files))  # sample image
             ratio = self.imgsz / max(im.shape[0], im.shape[1])  # max(h, w)  # ratio
             b += im.nbytes * ratio ** 2
         mem_required = b * self.ni / n * (1 + safety_margin)  # GB required to cache dataset into RAM

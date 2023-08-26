@@ -817,7 +817,8 @@ def classify_transforms(size=224, mean=(0.0, 0.0, 0.0), std=(1.0, 1.0, 1.0)):  #
     if not isinstance(size, int):
         raise TypeError(f'classify_transforms() size {size} must be integer, not (list, tuple)')
     if any(mean) or any(std):
-        return T.Compose([CenterCrop(size), ToTensor(), T.Normalize(mean, std, inplace=True)])
+        return T.Compose([CenterCrop(size), ToTensor()])
+        # return T.Compose([CenterCrop(size), ToTensor(), T.Normalize(mean, std, inplace=True)])
     else:
         return T.Compose([CenterCrop(size), ToTensor()])
 

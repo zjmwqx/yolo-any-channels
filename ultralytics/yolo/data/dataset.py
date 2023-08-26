@@ -214,8 +214,7 @@ class ClassificationDataset(torchvision.datasets.ImageFolder):
         torch_transforms (callable): torchvision transforms applied to the dataset.
         album_transforms (callable, optional): Albumentations transforms applied to the dataset if augment is True.
     """
-
-    def __init__(self, root, args, augment=False, cache=False):
+    def __init__(self, root, ch, args, augment=False, cache=False):
         """
         Initialize YOLO object with root, image size, augmentations, and cache settings.
 
@@ -229,6 +228,7 @@ class ClassificationDataset(torchvision.datasets.ImageFolder):
         if augment and args.fraction < 1.0:  # reduce training fraction
             self.samples = self.samples[:round(len(self.samples) * args.fraction)]
         self.cache_ram = cache is True or cache == 'ram'
+        self.ch = ch
         self.cache_disk = cache == 'disk'
         self.samples = [list(x) + [Path(x[0]).with_suffix('.npy'), None] for x in self.samples]  # file, index, npy, im
         self.torch_transforms = classify_transforms(args.imgsz)
@@ -244,18 +244,24 @@ class ClassificationDataset(torchvision.datasets.ImageFolder):
             mean=(0.0, 0.0, 0.0),  # IMAGENET_MEAN
             std=(1.0, 1.0, 1.0),  # IMAGENET_STD
             auto_aug=False) if augment else None
+    def get_any_channel_img(self, path):
+        if self.ch == 1:
+            img = cv2.imread(path, 0)
+        else:
+            img = cv2.imread(path, -1)[:, :, 0:self.ch]
+        return img
 
     def __getitem__(self, i):
         """Returns subset of data and targets corresponding to given indices."""
         f, j, fn, im = self.samples[i]  # filename, index, filename.with_suffix('.npy'), image
         if self.cache_ram and im is None:
-            im = self.samples[i][3] = cv2.imread(f, 0 if self.ch == 1 else 1)
+            im = self.samples[i][3] = self.get_any_channel_img(f)
         elif self.cache_disk:
             if not fn.exists():  # load npy
-                np.save(fn.as_posix(), cv2.imread(f, 0 if self.ch == 1 else 1))
+                np.save(fn.as_posix(), self.get_any_channel_img(f))
             im = np.load(fn)
         else:  # read image
-            im = cv2.imread(f, 0 if self.ch == 1 else 1)  # BGR
+            im = self.get_any_channel_img(f)  # BGR
         if self.album_transforms:
             sample = self.album_transforms(image=cv2.cvtColor(im, cv2.COLOR_BGR2RGB))['image']
         else:

@@ -67,13 +67,13 @@ class ClassificationTrainer(BaseTrainer):
 
         return  # dont return ckpt. Classification doesn't support resume
 
-    def build_dataset(self, img_path, mode='train', batch=None):
-        return ClassificationDataset(root=img_path, args=self.args, augment=mode == 'train')
+    def build_dataset(self, img_path, ch, mode='train', batch=None):
+        return ClassificationDataset(root=img_path, ch=ch, args=self.args, augment=mode == 'train')
 
-    def get_dataloader(self, dataset_path, batch_size=16, rank=0, mode='train'):
+    def get_dataloader(self, dataset_path, ch=3, batch_size=16, rank=0, mode='train'):
         """Returns PyTorch DataLoader with transforms to preprocess images for inference."""
         with torch_distributed_zero_first(rank):  # init dataset *.cache only once if DDP
-            dataset = self.build_dataset(dataset_path, mode)
+            dataset = self.build_dataset(dataset_path, ch, mode)
 
         loader = build_dataloader(dataset, batch_size, self.args.workers, rank=rank)
         # Attach inference transforms
