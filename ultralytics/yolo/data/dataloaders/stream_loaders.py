@@ -150,7 +150,7 @@ class LoadScreenshots:
 
 class LoadImages:
     # YOLOv8 image/video dataloader, i.e. `yolo predict source=image.jpg/vid.mp4`
-    def __init__(self, path, imgsz=640, vid_stride=1):
+    def __init__(self, path, imgsz=640, ch=3, vid_stride=1):
         """Initialize the Dataloader and raise FileNotFoundError if file not found."""
         if isinstance(path, str) and Path(path).suffix == '.txt':  # *.txt file with img/vid/dir on each line
             path = Path(path).read_text().rsplit()
@@ -171,6 +171,7 @@ class LoadImages:
         ni, nv = len(images), len(videos)
 
         self.imgsz = imgsz
+        self.ch = ch
         self.files = images + videos
         self.nf = ni + nv  # number of files
         self.video_flag = [False] * ni + [True] * nv
@@ -219,7 +220,7 @@ class LoadImages:
         else:
             # Read image
             self.count += 1
-            im0 = cv2.imread(path, -1)
+            im0 = cv2.imread(path, -1)[:,:,0: self.ch]
             if im0 is None:
                 raise FileNotFoundError(f'Image Not Found {path}')
             s = f'image {self.count}/{self.nf} {path}: '
